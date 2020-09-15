@@ -521,8 +521,7 @@ impl<'a> PPU<'a> {
         // BG / Window / Sprite priority
         if bg_attributes.bg_oam_priority {
             draw_bg = true;
-        }
-        if !self.dmg_compatibility && !self.lcdc.bg_window_display_priority {
+        } else if !self.dmg_compatibility && !self.lcdc.bg_window_display_priority {
             draw_sprite = true;
         } else if sprite_shade == 0 && display_background {
             draw_bg = true;
