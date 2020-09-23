@@ -72,9 +72,11 @@ impl<'a> GameBoy<'a> {
     }
 
     pub fn execute_cycle(&mut self) {
-        self.cpu.mmu.ppu.execute_cycle(&mut self.cpu.mmu.interrupt_controller);
+
         if self.cycle_count == 0 {
             self.cpu.mmu.cartridge.update_rtc(15_625);
+        }
+        if self.cycle_count % 4096 == 0 {
             let quit = self.cpu.mmu.joypad.poll_inputs();
             if quit {
                 self.cpu.mmu.cartridge.save();
@@ -82,6 +84,7 @@ impl<'a> GameBoy<'a> {
             }
         }
 
+        self.cpu.mmu.ppu.execute_cycle(&mut self.cpu.mmu.interrupt_controller);
         self.cpu.mmu.timer.execute_cycle(&mut self.cpu.mmu.interrupt_controller, &mut self.cpu.mmu.sound_controller);
         let double_speed = self.cpu.mmu.double_speed;
         if (self.cycle_count % 4 == 0) || (double_speed && (self.cycle_count % 2 == 0)) {
