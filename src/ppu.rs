@@ -519,7 +519,7 @@ impl<'a> PPU<'a> {
         let mut draw_sprite = false;
         let mut draw_bg = false;
         // BG / Window / Sprite priority
-        if bg_attributes.bg_oam_priority {
+        if bg_attributes.bg_oam_priority && bg_window_shade != 0 {
             draw_bg = true;
         } else if !self.dmg_compatibility && !self.lcdc.bg_window_display_priority {
             draw_sprite = true;
