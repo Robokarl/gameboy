@@ -1,5 +1,4 @@
 #![allow(clippy::verbose_bit_mask)]
-extern crate sdl2;
 
 use gumdrop::Options;
 use sdl2::render::TextureCreator;
