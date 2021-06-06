@@ -93,26 +93,3 @@ fn load_save_file<P: AsRef<Path>>(save_path: P, size: usize) -> Vec<u8> {
     load_data
 }
 
-#[cfg(test)]
-mod tests {
-    extern crate criterion;
-    use criterion::black_box;
-    use std::time::Instant;
-    use super::*;
-
-    #[test]
-    fn bench_mbc_read() {
-        let cart = Cartridge::new("./test_roms/emulator-only/mbc1/rom_8Mb.gb");
-
-        let start_time = Instant::now();
-
-        for _ in 0..100 {
-            for address in 0..0x8000 {
-                black_box(cart.read(address));
-            }
-        }
-
-        println!("Total time: {}ms", Instant::now().duration_since(start_time).as_millis());
-    }
-}
-

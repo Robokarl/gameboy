@@ -114,7 +114,7 @@ mod test {
         }
         rom[0x148] = 6;
         let ram = [0; 0x8000];
-        let mut mbc = MBC1::new(rom, &ram);
+        let mut mbc = MBC1::new(rom, &ram, false);
         mbc.write(0, 0xa); // enable RAM
         assert_eq!(mbc.read(0x0000), 0);
         assert_eq!(mbc.read(0x4000), 1);

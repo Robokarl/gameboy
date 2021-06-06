@@ -92,7 +92,7 @@ mod test {
         for (i, byte) in ram.iter_mut().enumerate() {
             *byte = (i / 0x2000) as u8;
         }
-        let mut mbc = MBC5::new(rom, &ram);
+        let mut mbc = MBC5::new(rom, &ram, false);
         for bank in 0x00..0x10 {
             mbc.write(0x4000, bank);
             assert_eq!(mbc.read(0xa000), 0xff);
