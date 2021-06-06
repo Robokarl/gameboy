@@ -10,6 +10,3 @@ edition = "2018"
 sdl2 = "0.34.1"
 gumdrop = "0.8.0"
 nanoserde = "0.1.19"
-
-[dev-dependencies]
-criterion = "0.3.3"

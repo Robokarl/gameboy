@@ -366,11 +366,11 @@ impl<'a> PPU<'a> {
             2 => {
                 // scan OAM
                 if self.tick == 1 {
-                    self.populate_sprites();
                 } else if self.tick == 80 {
                     if DEBUG {
                         println!("PPU: Ending OAM scan, starting drawing");
                     }
+                    self.populate_sprites();
                     self.tick = 0;
                     new_mode = 3;
                 }
@@ -519,10 +519,14 @@ impl<'a> PPU<'a> {
         let mut draw_sprite = false;
         let mut draw_bg = false;
         // BG / Window / Sprite priority
-        if bg_attributes.bg_oam_priority && bg_window_shade != 0 {
+        if !self.lcdc.bg_window_display_priority {
+            if sprite_shade != 0 {
+                draw_sprite = true;
+            } else if !self.dmg_compatibility {
+                draw_bg = true;
+            }
+        } else if bg_attributes.bg_oam_priority && bg_window_shade != 0 {
             draw_bg = true;
-        } else if !self.dmg_compatibility && !self.lcdc.bg_window_display_priority {
-            draw_sprite = true;
         } else if sprite_shade == 0 && display_background {
             draw_bg = true;
         } else if !sprite.bg_priority || bg_window_shade == 0 {
@@ -558,7 +562,7 @@ impl<'a> PPU<'a> {
     }
 
     fn get_sprite_tile_shade(&self, tile_number: u8, x: u8, y: u8, vram_bank: bool) -> u8 {
-        debug_assert!(x < 8 && y < 16, format!("x: {}, y: {}", x, y));
+        debug_assert!(x < 8 && y < 16, "x: {}, y: {}", x, y);
 
         let tile_start_address = tile_number as usize * 16;
         let tile_address = tile_start_address + (y as usize * 2);
@@ -583,7 +587,7 @@ impl<'a> PPU<'a> {
     }
 
     fn get_bg_tile_shade(&self, tile_number: u8, x: u8, y: u8, vram_bank: bool) -> u8 {
-        debug_assert!(x < 8 && y < 8, format!("x: {}, y: {}", x, y));
+        debug_assert!(x < 8 && y < 8, "x: {}, y: {}", x, y);
 
         #[allow(clippy::collapsible_if)]
         let tile_start_address = if self.lcdc.tile_address_mode {
