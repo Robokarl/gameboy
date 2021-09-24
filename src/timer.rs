@@ -19,8 +19,8 @@ impl Timer {
         }
     }
 
-    pub fn execute_cycle(&mut self, interrupt_controller: &mut InterruptController, sound_controller: &mut SoundController) {
-        if self.divider_tick & 0x1fff == 0x1fff {
+    pub fn execute_cycle(&mut self, interrupt_controller: &mut InterruptController, sound_controller: &mut SoundController, double_speed: bool) {
+        if (!double_speed && self.divider_tick & 0x1fff == 0x1fff) || (double_speed && self.divider_tick & 0x3fff == 0x3fff) {
             sound_controller.tick_frame_sequencer();
         }
         self.divider_tick = self.divider_tick.wrapping_add(1);

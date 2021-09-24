@@ -37,7 +37,7 @@ const LIMIT_SPEED: bool = !BENCHMARK && !DEBUG;
 
 const SCREEN_WIDTH: usize = 160;
 const SCREEN_HEIGHT: usize = 144;
-const SCALE_FACTOR: u32 = 4;
+const SCALE_FACTOR: u32 = 5;
 
 struct GameBoy<'a> {
     cpu: CPU<'a>,
@@ -83,23 +83,36 @@ impl<'a> GameBoy<'a> {
             }
         }
 
-        self.cpu.mmu.ppu.execute_cycle(&mut self.cpu.mmu.interrupt_controller);
-        self.cpu.mmu.timer.execute_cycle(&mut self.cpu.mmu.interrupt_controller, &mut self.cpu.mmu.sound_controller);
         let double_speed = self.cpu.mmu.double_speed;
-        if (self.cycle_count % 4 == 0) || (double_speed && (self.cycle_count % 2 == 0)) {
+
+        // PPU runs at 4MHz always
+        if !double_speed || self.cycle_count % 2 == 0 {
+            self.cpu.mmu.ppu.execute_cycle(&mut self.cpu.mmu.interrupt_controller);
+        }
+
+        // Timer runs at 4MHz or 8MHz (every cycle)
+        self.cpu.mmu.timer.execute_cycle(&mut self.cpu.mmu.interrupt_controller, &mut self.cpu.mmu.sound_controller, double_speed);
+
+        // CPU runs at 1MHz or 2MHz (4 cycles)
+        if self.cycle_count % 4 == 0 {
             self.cpu.execute_cycle();
         }
 
+        // OAM transfer runs at 1MHz or 2MHz (4 cycles)
+        // Other DMAs always run at 2MHz
         let dma_cycles = match self.cpu.mmu.dma_config.dma_type {
-            DmaType::Oam if double_speed => 2,
-            DmaType::Oam if !double_speed => 4,
-            _ => 2,
+            DmaType::Oam => 4,
+            _ if !double_speed => 2,
+            _                  => 4,
         };
         if self.cycle_count % dma_cycles == 0 {
             self.cpu.mmu.execute_cycle();
         }
 
-        self.cpu.mmu.sound_controller.execute_cycle();
+        // APU always runs at 4MHz
+        if !double_speed || self.cycle_count % 2 == 0 {
+            self.cpu.mmu.sound_controller.execute_cycle();
+        }
 
         self.cycle_count = self.cycle_count.wrapping_add(1);
     }
