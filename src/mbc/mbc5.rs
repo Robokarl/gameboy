@@ -1,9 +1,9 @@
-use super::MBC;
-use std::path::PathBuf;
+use super::Mbc;
+use std::path::Path;
 use std::io::{BufWriter, Write};
 use std::fs::File;
 
-pub struct MBC5 {
+pub struct Mbc5 {
     rom: Vec<u8>,
     ram: [u8; 0x2_0000],
     ram_enabled: bool,
@@ -14,9 +14,9 @@ pub struct MBC5 {
     has_battery: bool,
 }
 
-impl MBC5 {
+impl Mbc5 {
     pub fn new(rom: Vec<u8>, ram: &[u8], battery: bool) -> Self {
-        let mut mbc = MBC5 {
+        let mut mbc = Mbc5 {
             rom: vec![0; 0x80_0000],
             ram: [0; 0x2_0000],
             ram_enabled: false,
@@ -28,13 +28,13 @@ impl MBC5 {
         };
 
         mbc.rom[0..rom.len()].copy_from_slice(&rom);
-        mbc.ram[0..ram.len()].copy_from_slice(&ram);
+        mbc.ram[0..ram.len()].copy_from_slice(ram);
 
         mbc
     }
 }
 
-impl MBC for MBC5 {
+impl Mbc for Mbc5 {
     fn write(&mut self, address: usize, value: u8) {
         match address {
             0x0000..=0x1fff => self.ram_enabled = value == 0x0a,
@@ -72,7 +72,7 @@ impl MBC for MBC5 {
         }
     }
 
-    fn save(&self, path: &PathBuf) {
+    fn save(&self, path: &Path) {
         if self.has_battery {
             let mut buffer = BufWriter::new(File::create(path).expect("Cannot open save file"));
             buffer.write_all(&self.ram).expect("Failed to save");
@@ -92,7 +92,7 @@ mod test {
         for (i, byte) in ram.iter_mut().enumerate() {
             *byte = (i / 0x2000) as u8;
         }
-        let mut mbc = MBC5::new(rom, &ram, false);
+        let mut mbc = Mbc5::new(rom, &ram, false);
         for bank in 0x00..0x10 {
             mbc.write(0x4000, bank);
             assert_eq!(mbc.read(0xa000), 0xff);

@@ -1,5 +1,5 @@
-use super::MBC;
-use std::path::PathBuf;
+use super::Mbc;
+use std::path::Path;
 use std::io::{BufWriter, Write};
 use std::fs::File;
 use std::time::{SystemTime, Duration};
@@ -24,7 +24,7 @@ struct Rtc {
 }
 
 
-pub struct MBC3 {
+pub struct Mbc3 {
     rom: Vec<u8>,
     ram: [u8; 0x8000],
     rom_bank: usize,
@@ -36,9 +36,9 @@ pub struct MBC3 {
     has_rtc: bool,
 }
 
-impl MBC3 {
+impl Mbc3 {
     pub fn new(rom: Vec<u8>, load_data: &[u8], battery: bool, rtc: bool) -> Self {
-        let mut mbc = MBC3 {
+        let mut mbc = Mbc3 {
             rom: vec![0; 0x20_0000],
             ram: [0; 0x8000],
             rom_bank: 1,
@@ -79,7 +79,7 @@ impl MBC3 {
 
 }
 
-impl MBC for MBC3 {
+impl Mbc for Mbc3 {
     fn read(&self, address: usize) -> u8 {
         if address < 0x4000 {
             self.rom[address]
@@ -87,7 +87,7 @@ impl MBC for MBC3 {
             let rom_bank = self.rom_bank % (2 << self.rom_size);
             let rom_address = rom_bank * 0x4000 + (address - 0x4000);
             self.rom[rom_address]
-        } else if address >= 0xa000 && address < 0xc000 {
+        } else if (0xa000..0xc000).contains(&address) {
             if self.ram_timer_select < 4 && self.ram_timer_enabled {
                 let ram_address = self.ram_timer_select as usize * 0x2000 + (address - 0xa000);
                 self.ram[ram_address]
@@ -131,7 +131,7 @@ impl MBC for MBC3 {
                 self.rtc.latched_time = self.rtc.live_time.clone();
             }
             self.rtc.latched = new_rtc_latched;
-        } else if address >= 0xa000 && address < 0xc000 {
+        } else if (0xa000..0xc000).contains(&address) {
             if self.ram_timer_select < 4 && self.ram_timer_enabled {
                 let ram_address = self.ram_timer_select as usize * 0x2000 + (address - 0xa000);
                 self.ram[ram_address] = value;
@@ -157,7 +157,7 @@ impl MBC for MBC3 {
         }
     }
 
-    fn save(&self, path: &PathBuf) {
+    fn save(&self, path: &Path) {
         if !self.has_battery && !self.has_rtc {
             return;
         }

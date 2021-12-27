@@ -1,9 +1,9 @@
-use super::MBC;
-use std::path::PathBuf;
+use super::Mbc;
+use std::path::Path;
 use std::io::{BufWriter, Write};
 use std::fs::File;
 
-pub struct MBC1 {
+pub struct Mbc1 {
     rom: Vec<u8>,
     ram: [u8; 0x8000],
     ram_enabled: bool,
@@ -15,9 +15,9 @@ pub struct MBC1 {
     has_battery: bool,
 }
 
-impl MBC1 {
+impl Mbc1 {
     pub fn new(rom: Vec<u8>, ram: &[u8], battery: bool) -> Self {
-        let mut mbc = MBC1 {
+        let mut mbc = Mbc1 {
             rom: vec![0; 0x20_0000],
             ram: [0; 0x8000],
             ram_enabled: false,
@@ -30,13 +30,13 @@ impl MBC1 {
         };
 
         mbc.rom[0..rom.len()].copy_from_slice(&rom);
-        mbc.ram[0..ram.len()].copy_from_slice(&ram);
+        mbc.ram[0..ram.len()].copy_from_slice(ram);
 
         mbc
     }
 }
 
-impl MBC for MBC1 {
+impl Mbc for Mbc1 {
     fn read(&self, address: usize) -> u8 {
         if address < 0x4000 {
             if self.mode && self.rom_size > 4 {
@@ -53,7 +53,7 @@ impl MBC for MBC1 {
             };
             let rom_address = rom_bank * 0x4000 + (address - 0x4000);
             self.rom[rom_address]
-        } else if address >= 0xa000 && address < 0xc000 {
+        } else if (0xa000..0xc000).contains(&address) {
             if self.ram_enabled {
                 if self.mode && self.ram_size > 2 {
                     let ram_address = self.bank2 * 0x2000 + (address - 0xa000);
@@ -79,7 +79,7 @@ impl MBC for MBC1 {
             self.bank2 = (value as usize) & 0x3;
         } else if address < 0x8000 {
             self.mode = value & 0x1 == 0x1;
-        } else if address >= 0xa000 && address < 0xc000 {
+        } else if (0xa000..0xc000).contains(&address) {
             if self.ram_enabled {
                 if self.mode && self.ram_size > 2 {
                     let ram_address = self.bank2 * 0x2000 + (address - 0xa000);
@@ -94,7 +94,7 @@ impl MBC for MBC1 {
         }
     }
 
-    fn save(&self, path: &PathBuf) {
+    fn save(&self, path: &Path) {
         if self.has_battery {
             let mut buffer = BufWriter::new(File::create(path).expect("Cannot open save file"));
             buffer.write_all(&self.ram).expect("Failed to save");
@@ -114,7 +114,7 @@ mod test {
         }
         rom[0x148] = 6;
         let ram = [0; 0x8000];
-        let mut mbc = MBC1::new(rom, &ram, false);
+        let mut mbc = Mbc1::new(rom, &ram, false);
         mbc.write(0, 0xa); // enable RAM
         assert_eq!(mbc.read(0x0000), 0);
         assert_eq!(mbc.read(0x4000), 1);

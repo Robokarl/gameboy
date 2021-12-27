@@ -1,19 +1,19 @@
+use super::interrupts::*;
+use super::{Cartridge, Display, Joypad, SerialLink, SoundController, Timer, DEBUG, Ppu};
 use sdl2::render::TextureCreator;
 use sdl2::video::WindowContext;
-use super::interrupts::*;
-use super::{Cartridge, Display, Joypad, SerialLink, SoundController, Timer, DEBUG, PPU};
 use std::path::Path;
 
 const BOOT_ROM_SIZE: usize = 0x900;
 const BOOT_ROM_SIZE_MINUS_1: usize = BOOT_ROM_SIZE - 1;
 
-pub struct MMU<'a> {
+pub struct Mmu<'a> {
     boot_rom: [u8; BOOT_ROM_SIZE],
     pub cartridge: Cartridge,
     wram: [u8; 0x8000],
     hram: [u8; 0x7f],
     disable_boot_rom: bool,
-    pub ppu: PPU<'a>,
+    pub ppu: Ppu<'a>,
     pub sound_controller: SoundController,
     pub interrupt_controller: super::InterruptController,
     pub timer: Timer,
@@ -61,7 +61,7 @@ impl DmaConfig {
     }
 }
 
-impl<'a> MMU<'a> {
+impl<'a> Mmu<'a> {
     pub fn new<P: AsRef<Path>>(
         rom_path: P,
         sdl: &sdl2::Sdl,
@@ -79,13 +79,13 @@ impl<'a> MMU<'a> {
             boot_rom[i] = *byte;
         }
 
-        MMU {
+        Mmu {
             boot_rom,
             cartridge: Cartridge::new(rom_path),
             wram: [0; 0x8000],
             hram: [0; 0x7f],
             disable_boot_rom: false,
-            ppu: PPU::new(display, texture_creator, dmg_mode),
+            ppu: Ppu::new(display, texture_creator, dmg_mode),
             sound_controller: SoundController::new(sdl),
             interrupt_controller: InterruptController::new(),
             timer: Timer::new(),
@@ -264,7 +264,7 @@ impl<'a> MMU<'a> {
         };
 
         if DEBUG {
-            println!("MMU Read: Address: {:04x}, Data: {:02x}", address, result);
+            println!("Mmu Read: Address: {:04x}, Data: {:02x}", address, result);
         }
 
         result
@@ -272,7 +272,7 @@ impl<'a> MMU<'a> {
 
     pub fn write_byte(&mut self, address: usize, value: u8) {
         if DEBUG {
-            println!("MMU Write: Address: {:04x}, Data: {:02x}", address, value);
+            println!("Mmu Write: Address: {:04x}, Data: {:02x}", address, value);
         }
 
         match address {

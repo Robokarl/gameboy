@@ -2,7 +2,7 @@ use super::mbc::*;
 use std::path::{Path, PathBuf};
 
 pub struct Cartridge {
-    mbc: Box<dyn MBC>,
+    mbc: Box<dyn Mbc>,
     save_path: PathBuf,
 }
 
@@ -20,42 +20,42 @@ impl Cartridge {
         let mut rtc = false;
         let mut load_data = vec![];
         
-        let mbc: Box<dyn MBC> = match rom[0x147] {
-            0x0 | 0x8 | 0x9 => Box::new(NoMBC::new(rom)),
-            0x1 | 0x2 => Box::new(MBC1::new(rom, &load_data, battery)),
+        let mbc: Box<dyn Mbc> = match rom[0x147] {
+            0x0 | 0x8 | 0x9 => Box::new(NoMbc::new(rom)),
+            0x1 | 0x2 => Box::new(Mbc1::new(rom, &load_data, battery)),
             0x3 => {
                 load_data = load_save_file(&save_path, 0x8000);
                 battery = true;
-                Box::new(MBC1::new(rom, &load_data, battery))
+                Box::new(Mbc1::new(rom, &load_data, battery))
             }
-            0x5 => Box::new(MBC2::new(rom, &load_data, battery)),
+            0x5 => Box::new(Mbc2::new(rom, &load_data, battery)),
             0x6 => {
                 load_data = load_save_file(&save_path, 0x200);
                 battery = true;
-                Box::new(MBC2::new(rom, &load_data, battery))
+                Box::new(Mbc2::new(rom, &load_data, battery))
             }
             0x0f => {
                 load_data = load_save_file(&save_path, 0x8000);
                 rtc = true;
-                Box::new(MBC3::new(rom, &load_data, battery, rtc))
+                Box::new(Mbc3::new(rom, &load_data, battery, rtc))
             }
             0x10 => {
                 load_data = load_save_file(&save_path, 0x8000);
                 battery = true;
                 rtc = true;
-                Box::new(MBC3::new(rom, &load_data, battery, rtc))
+                Box::new(Mbc3::new(rom, &load_data, battery, rtc))
             }
-            0x11 | 0x12 => Box::new(MBC3::new(rom, &load_data, battery, rtc)),
+            0x11 | 0x12 => Box::new(Mbc3::new(rom, &load_data, battery, rtc)),
             0x13 => {
                 load_data = load_save_file(&save_path, 0x8000);
                 battery = true;
-                Box::new(MBC3::new(rom, &load_data, battery, rtc))
+                Box::new(Mbc3::new(rom, &load_data, battery, rtc))
             }
-            0x19 | 0x1a | 0x1c | 0x1d => Box::new(MBC5::new(rom, &load_data, battery)),
+            0x19 | 0x1a | 0x1c | 0x1d => Box::new(Mbc5::new(rom, &load_data, battery)),
             0x1b | 0x1e => {
                 load_data = load_save_file(&save_path, 0x2_0000);
                 battery = true;
-                Box::new(MBC5::new(rom, &load_data, battery))
+                Box::new(Mbc5::new(rom, &load_data, battery))
             }
             _ => unimplemented!("Unsupported Cartridge Type: {:02x}", rom[0x147]),
         };

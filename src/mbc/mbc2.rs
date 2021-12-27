@@ -1,9 +1,9 @@
-use super::MBC;
-use std::path::PathBuf;
+use super::Mbc;
+use std::path::Path;
 use std::io::{BufWriter, Write};
 use std::fs::File;
 
-pub struct MBC2 {
+pub struct Mbc2 {
     rom: Vec<u8>,
     ram: [u8; 0x200],
     ram_enabled: bool,
@@ -12,9 +12,9 @@ pub struct MBC2 {
     has_battery: bool,
 }
 
-impl MBC2 {
+impl Mbc2 {
     pub fn new(rom: Vec<u8>, ram: &[u8], battery: bool) -> Self {
-        let mut mbc = MBC2 {
+        let mut mbc = Mbc2 {
             rom: vec![0; 0x4_0000],
             ram: [0; 0x200],
             ram_enabled: false,
@@ -24,17 +24,17 @@ impl MBC2 {
         };
 
         if mbc.rom_size > 3 {
-            panic!("MBC2 - Invalid ROM size: {}", mbc.rom_size);
+            panic!("Mbc2 - Invalid ROM size: {}", mbc.rom_size);
         }
 
         mbc.rom[0..rom.len()].copy_from_slice(&rom);
-        mbc.ram[0..ram.len()].copy_from_slice(&ram);
+        mbc.ram[0..ram.len()].copy_from_slice(ram);
 
         mbc
     }
 }
 
-impl MBC for MBC2 {
+impl Mbc for Mbc2 {
     fn read(&self, address: usize) -> u8 {
         if address < 0x4000 {
             self.rom[address]
@@ -42,7 +42,7 @@ impl MBC for MBC2 {
             let rom_bank = self.rom_bank % (2 << self.rom_size);
             let rom_address = rom_bank as usize * 0x4000 + (address - 0x4000);
             self.rom[rom_address]
-        } else if address >= 0xa000 && address < 0xc000 {
+        } else if (0xa000..0xc000).contains(&address) {
             if self.ram_enabled {
                 let ram_address = (address - 0xa000) % 0x200;
                 self.ram[ram_address] | 0xf0
@@ -63,7 +63,7 @@ impl MBC for MBC2 {
             }
         } else if address < 0x8000 {
             // No effect
-        } else if address >= 0xa000 && address < 0xc000 {
+        } else if (0xa000..0xc000).contains(&address) {
             if self.ram_enabled {
                 let ram_address = (address - 0xa000) % 0x200;
                 self.ram[ram_address] = value;
@@ -73,7 +73,7 @@ impl MBC for MBC2 {
         }
     }
 
-    fn save(&self, path: &PathBuf) {
+    fn save(&self, path: &Path) {
         if self.has_battery {
             let mut buffer = BufWriter::new(File::create(path).expect("Cannot open save file"));
             buffer.write_all(&self.ram).expect("Failed to save");

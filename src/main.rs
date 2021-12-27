@@ -7,11 +7,11 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 mod cpu;
-use cpu::CPU;
+use cpu::Cpu;
 mod mmu;
-use mmu::{DmaType, MMU};
+use mmu::{DmaType, Mmu};
 mod ppu;
-use ppu::PPU;
+use ppu::Ppu;
 mod sound;
 use sound::SoundController;
 mod interrupts;
@@ -42,7 +42,7 @@ const SCREEN_HEIGHT: usize = 144;
 const SCALE_FACTOR: u32 = 5;
 
 struct GameBoy<'a> {
-    cpu: CPU<'a>,
+    cpu: Cpu<'a>,
     cycle_count: u32,
     input: Input,
 }
@@ -68,7 +68,7 @@ impl<'a> GameBoy<'a> {
         dmg_mode: bool,
     ) -> Self {
         GameBoy {
-            cpu: CPU::new(rom_path, sdl, display, texture_creator, dmg_mode),
+            cpu: Cpu::new(rom_path, sdl, display, texture_creator, dmg_mode),
             cycle_count: 0,
             input: Input::new(sdl.event_pump().unwrap()),
         }
@@ -105,7 +105,7 @@ impl<'a> GameBoy<'a> {
         // Timer runs at 4MHz or 8MHz (every cycle)
         self.cpu.mmu.timer.execute_cycle(&mut self.cpu.mmu.interrupt_controller, &mut self.cpu.mmu.sound_controller, double_speed);
 
-        // CPU runs at 1MHz or 2MHz (4 cycles)
+        // Cpu runs at 1MHz or 2MHz (4 cycles)
         if self.cycle_count % 4 == 0 {
             self.cpu.execute_cycle();
         }

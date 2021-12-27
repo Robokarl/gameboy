@@ -212,7 +212,7 @@ impl CgbPalette {
     }
 }
 
-pub struct PPU<'a> {
+pub struct Ppu<'a> {
     texture: Texture<'a>,
     display: Display,
     frame_buffer: [u8; SCREEN_HEIGHT * SCREEN_WIDTH * 3],
@@ -256,7 +256,7 @@ struct Sprite {
     cgb_palette: u8,
 }
 
-impl<'a> PPU<'a> {
+impl<'a> Ppu<'a> {
     pub fn new(
         display: Display,
         texture_creator: &'a TextureCreator<WindowContext>,
@@ -270,7 +270,7 @@ impl<'a> PPU<'a> {
             )
             .expect("Failed to create texture");
 
-        PPU {
+        Ppu {
             texture,
             display,
             frame_buffer: [0; SCREEN_WIDTH * SCREEN_HEIGHT * 3],
@@ -333,13 +333,13 @@ impl<'a> PPU<'a> {
                         self.render_frame();
                         interrupt_controller.interrupt_flag |= 0x01;
                         if DEBUG {
-                            println!("PPU: Ending HBLANK, starting VBLANK");
+                            println!("Ppu: Ending HBLANK, starting VBLANK");
                         }
                         new_mode = 1;
                     } else {
                         if DEBUG {
                             println!(
-                                "PPU: Ending HBLANK, starting OAM scan for scanline {}",
+                                "Ppu: Ending HBLANK, starting OAM scan for scanline {}",
                                 new_scanline
                             );
                         }
@@ -354,12 +354,12 @@ impl<'a> PPU<'a> {
                     new_scanline += 1;
                     if new_scanline == 154 {
                         if DEBUG {
-                            println!("PPU: Ending VBLANK, Starting OAM scan");
+                            println!("Ppu: Ending VBLANK, Starting OAM scan");
                         }
                         new_scanline = 0;
                         new_mode = 2;
                     } else if DEBUG {
-                        println!("PPU: Starting scanline {}", new_scanline);
+                        println!("Ppu: Starting scanline {}", new_scanline);
                     }
                 }
             }
@@ -368,7 +368,7 @@ impl<'a> PPU<'a> {
                 if self.tick == 1 {
                 } else if self.tick == 80 {
                     if DEBUG {
-                        println!("PPU: Ending OAM scan, starting drawing");
+                        println!("Ppu: Ending OAM scan, starting drawing");
                     }
                     self.populate_sprites();
                     self.tick = 0;
@@ -379,7 +379,7 @@ impl<'a> PPU<'a> {
                 // draw line
                 if self.tick == 172 {
                     if DEBUG {
-                        println!("PPU: Ending drawing, starting hblank");
+                        println!("Ppu: Ending drawing, starting hblank");
                     }
                     self.tick = 0;
                     new_mode = 0;
@@ -518,7 +518,9 @@ impl<'a> PPU<'a> {
 
         let mut draw_sprite = false;
         let mut draw_bg = false;
+        
         // BG / Window / Sprite priority
+        #[allow(clippy::if_same_then_else)]
         if !self.lcdc.bg_window_display_priority {
             if sprite_shade != 0 {
                 draw_sprite = true;
@@ -589,16 +591,14 @@ impl<'a> PPU<'a> {
     fn get_bg_tile_shade(&self, tile_number: u8, x: u8, y: u8, vram_bank: bool) -> u8 {
         debug_assert!(x < 8 && y < 8, "x: {}, y: {}", x, y);
 
-        #[allow(clippy::collapsible_if)]
         let tile_start_address = if self.lcdc.tile_address_mode {
             tile_number as usize * 16
+        } else if tile_number >= 128 {
+            (tile_number as usize - 128) * 16 + 0x800
         } else {
-            if tile_number >= 128 {
-                (tile_number as usize - 128) * 16 + 0x800
-            } else {
-                tile_number as usize * 16 + 0x1000
-            }
+            tile_number as usize * 16 + 0x1000
         };
+
         let tile_address = tile_start_address + (y as usize * 2);
 
         let tile_bank = if vram_bank {
@@ -623,7 +623,7 @@ impl<'a> PPU<'a> {
     pub fn write_vram(&mut self, address: usize, value: u8) {
         if self.lcd_status.mode == 3 && self.lcdc.display_enable {
             if DEBUG {
-                println!("PPU: Write ignored");
+                println!("Ppu: Write ignored");
             }
             return; // VRAM inacessible in mode 3
         }
@@ -669,7 +669,7 @@ impl<'a> PPU<'a> {
         {
             self.sprite_attribute_table[address - 0xfe00] = value;
         } else if DEBUG {
-            println!("PPU: OAM write ignored");
+            println!("Ppu: OAM write ignored");
         }
     }
 
@@ -707,7 +707,7 @@ impl<'a> PPU<'a> {
                 .write_data(value, self.lcd_status.mode),
             0xff6c => self.object_priority_mode = value & 0x01 == 0x01,
             _ => println!(
-                "PPU register write to address {:04x} not implemented, data: {:02x}",
+                "Ppu register write to address {:04x} not implemented, data: {:02x}",
                 address, value
             ),
         }
@@ -734,7 +734,7 @@ impl<'a> PPU<'a> {
             0xff6c => if self.object_priority_mode { 0x01  } else { 0x00 },
             _ => {
                 println!(
-                    "PPU register read from address {:04x} not implemented",
+                    "Ppu register read from address {:04x} not implemented",
                     address
                 );
                 0xff

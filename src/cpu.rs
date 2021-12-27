@@ -1,11 +1,11 @@
 use sdl2::render::TextureCreator;
 use sdl2::video::WindowContext;
 use super::registers::Registers;
-use super::{Display, InterruptState, DEBUG, MMU};
+use super::{Display, InterruptState, DEBUG, Mmu};
 use std::path::Path;
 
-pub struct CPU<'a> {
-    pub mmu: MMU<'a>,
+pub struct Cpu<'a> {
+    pub mmu: Mmu<'a>,
     pub pc: usize,
     debug_pc: usize,
     pub sp: usize,
@@ -19,7 +19,7 @@ pub struct CPU<'a> {
     interrupt_dest: usize,
 }
 
-impl<'a> CPU<'a> {
+impl<'a> Cpu<'a> {
     pub fn new<P: AsRef<Path>>(
         rom_path: P,
         sdl: &sdl2::Sdl,
@@ -27,8 +27,8 @@ impl<'a> CPU<'a> {
         texture_creator: &'a TextureCreator<WindowContext>,
         dmg_mode: bool,
     ) -> Self {
-        CPU {
-            mmu: MMU::new(rom_path, sdl, display, texture_creator, dmg_mode),
+        Cpu {
+            mmu: Mmu::new(rom_path, sdl, display, texture_creator, dmg_mode),
             pc: 0,
             debug_pc: 0,
             sp: 0,

@@ -1,8 +1,8 @@
-use super::CPU;
+use super::Cpu;
 use super::InterruptState;
 use super::registers::Flags;
 
-impl<'a> CPU<'a> {
+impl<'a> Cpu<'a> {
     pub fn ld_a16_sp(&mut self) {
         match self.cycles {
             0 => {
