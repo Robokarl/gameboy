@@ -1,9 +1,5 @@
 
-use sdl2::EventPump;
-use sdl2::keyboard::Scancode;
-
 pub struct Joypad {
-    event_pump: EventPump,
     select_buttons: bool,
     select_directions: bool,
     buttons_state: u8,
@@ -11,13 +7,12 @@ pub struct Joypad {
 }
 
 impl Joypad {
-    pub fn new(sdl: &sdl2::Sdl) -> Self {
+    pub fn new() -> Self {
         Joypad {
-            event_pump: sdl.event_pump().unwrap(),
             select_buttons: true,
             select_directions: true,
-            buttons_state: 0x0f,
-            directions_state: 0x0f,
+            buttons_state: 0x00,
+            directions_state: 0x00,
         }
     }
 
@@ -39,32 +34,12 @@ impl Joypad {
         value
     }
 
-    pub fn poll_inputs(&mut self) -> bool {
-        for event in self.event_pump.poll_iter() {
-            if let sdl2::event::Event::Quit { .. } = event {
-                return true;
-            }
-        }
+    pub fn set_values(&mut self, buttons: u8, directions: u8) {
+        self.buttons_state = buttons;
+        self.directions_state = directions;
+    }
 
-        let keyboard_state = self.event_pump.keyboard_state();
-        let scancodes = keyboard_state.pressed_scancodes();
-        self.directions_state = 0x00;
-        self.buttons_state = 0x00;
-        for code in scancodes {
-            match code {
-                Scancode::Down  => self.directions_state |= 0x08,
-                Scancode::Up    => self.directions_state |= 0x04,
-                Scancode::Left  => self.directions_state |= 0x02,
-                Scancode::Right => self.directions_state |= 0x01,
-
-                Scancode::Return => self.buttons_state |= 0x08,
-                Scancode::Space  => self.buttons_state |= 0x04,
-                Scancode::A      => self.buttons_state |= 0x02,
-                Scancode::S      => self.buttons_state |= 0x01,
-                _ => {}
-            }
-        }
-
-        false
+    pub fn get_values(&self) -> (u8, u8) {
+        (self.buttons_state, self.directions_state)
     }
 }

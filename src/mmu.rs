@@ -89,7 +89,7 @@ impl<'a> MMU<'a> {
             sound_controller: SoundController::new(sdl),
             interrupt_controller: InterruptController::new(),
             timer: Timer::new(),
-            joypad: Joypad::new(sdl),
+            joypad: Joypad::new(),
             serial_link: SerialLink::new(),
             dma_config: DmaConfig::default(),
             wram_bank_sel: 0,

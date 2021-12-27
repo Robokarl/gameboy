@@ -24,6 +24,8 @@ mod serial;
 use serial::SerialLink;
 mod display;
 use display::Display;
+mod input;
+use input::Input;
 mod cartridge;
 mod instructions;
 mod mbc;
@@ -41,7 +43,8 @@ const SCALE_FACTOR: u32 = 5;
 
 struct GameBoy<'a> {
     cpu: CPU<'a>,
-    cycle_count: u16,
+    cycle_count: u32,
+    input: Input,
 }
 
 #[derive(Options)]
@@ -67,23 +70,30 @@ impl<'a> GameBoy<'a> {
         GameBoy {
             cpu: CPU::new(rom_path, sdl, display, texture_creator, dmg_mode),
             cycle_count: 0,
+            input: Input::new(sdl.event_pump().unwrap()),
+        }
+    }
+
+    fn poll_inputs(&mut self) {
+        self.input.poll_inputs(&mut self.cpu.mmu.joypad);
+        if self.input.quit {
+            self.cpu.mmu.cartridge.save();
+            std::process::exit(0);
         }
     }
 
     pub fn execute_cycle(&mut self) {
 
-        if self.cycle_count == 0 {
-            self.cpu.mmu.cartridge.update_rtc(15_625);
-        }
         if self.cycle_count % 4096 == 0 {
-            let quit = self.cpu.mmu.joypad.poll_inputs();
-            if quit {
-                self.cpu.mmu.cartridge.save();
-                std::process::exit(0);
-            }
+            self.poll_inputs();
         }
 
         let double_speed = self.cpu.mmu.double_speed;
+
+        let update_rtc_cycle = if double_speed { 131072 } else { 65536 };
+        if self.cycle_count % update_rtc_cycle == 0 {
+            self.cpu.mmu.cartridge.update_rtc(15_625);
+        }
 
         // PPU runs at 4MHz always
         if !double_speed || self.cycle_count % 2 == 0 {
@@ -122,7 +132,10 @@ impl<'a> GameBoy<'a> {
         let mut count = 0;
 
         loop {
-            if LIMIT_SPEED && self.cpu.mmu.sound_controller.buffer_full() {
+            if self.input.pause {
+                self.poll_inputs();
+                thread::sleep(Duration::from_millis(10));
+            } else if LIMIT_SPEED && self.cpu.mmu.sound_controller.buffer_full() {
                 self.cpu.mmu.sound_controller.queue_audio();
                 thread::sleep(Duration::from_millis(1));
             } else {
