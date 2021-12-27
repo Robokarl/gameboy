@@ -559,6 +559,8 @@ pub struct SoundController {
     buffer_size: usize,
     frame_sequence_count: u8,
     tick: u8,
+    run_2x: bool,
+    mute: bool,
 }
 
 impl SoundController {
@@ -595,6 +597,8 @@ impl SoundController {
             buffer_size: 0,
             frame_sequence_count: 0,
             tick: 0,
+            run_2x: false,
+            mute: false,
         }
     }
 
@@ -686,22 +690,25 @@ impl SoundController {
         }
 
         if self.tick == 0 {
-            let noise_output = self.noise_channel.output as f32 / 100.0;
-            let wave_output = self.wave_channel.output as f32 / 100.0;
-            let tone_output = self.tone_channel.output as f32 / 100.0;
-            let tone_sweep_output = self.tone_sweep_channel.output as f32 / 100.0;
-
             let mut left = 0.0;
-            if self.output_terminal_settings & 0x80 != 0 { left += noise_output };
-            if self.output_terminal_settings & 0x40 != 0 { left += wave_output };
-            if self.output_terminal_settings & 0x20 != 0 { left += tone_output };
-            if self.output_terminal_settings & 0x10 != 0 { left += tone_sweep_output };
-
             let mut right = 0.0;
-            if self.output_terminal_settings & 0x08 != 0 { right += noise_output };
-            if self.output_terminal_settings & 0x04 != 0 { right += wave_output };
-            if self.output_terminal_settings & 0x02 != 0 { right += tone_output };
-            if self.output_terminal_settings & 0x01 != 0 { right += tone_sweep_output };
+
+            if !self.mute {
+                let noise_output = self.noise_channel.output as f32 / 100.0;
+                let wave_output = self.wave_channel.output as f32 / 100.0;
+                let tone_output = self.tone_channel.output as f32 / 100.0;
+                let tone_sweep_output = self.tone_sweep_channel.output as f32 / 100.0;
+
+                if self.output_terminal_settings & 0x80 != 0 { left += noise_output };
+                if self.output_terminal_settings & 0x40 != 0 { left += wave_output };
+                if self.output_terminal_settings & 0x20 != 0 { left += tone_output };
+                if self.output_terminal_settings & 0x10 != 0 { left += tone_sweep_output };
+
+                if self.output_terminal_settings & 0x08 != 0 { right += noise_output };
+                if self.output_terminal_settings & 0x04 != 0 { right += wave_output };
+                if self.output_terminal_settings & 0x02 != 0 { right += tone_output };
+                if self.output_terminal_settings & 0x01 != 0 { right += tone_sweep_output };
+            }
 
             self.output_buffer[self.buffer_insert_index] = left * self.left_volume as f32 / 8.0;
             self.output_buffer[self.buffer_insert_index+1] = right * self.right_volume as f32 / 8.0;
@@ -709,7 +716,8 @@ impl SoundController {
             self.buffer_size += 2;
         }
 
-        self.tick = (self.tick + 1) % 45;
+        let tick_max = if self.run_2x { 90 } else { 45 };
+        self.tick = (self.tick + 1) % tick_max;
     }
 
     pub fn tick_frame_sequencer(&mut self) {
@@ -755,6 +763,14 @@ impl SoundController {
         self.tone_channel.reset();
         self.wave_channel.reset();
         self.noise_channel.reset();
+    }
+
+    pub fn set_run_2x(&mut self, run_2x: bool) {
+        self.run_2x = run_2x;
+    }
+
+    pub fn set_mute(&mut self, mute: bool) {
+        self.mute = mute;
     }
 }
 

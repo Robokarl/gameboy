@@ -76,6 +76,8 @@ impl<'a> GameBoy<'a> {
 
     fn poll_inputs(&mut self) {
         self.input.poll_inputs(&mut self.cpu.mmu.joypad);
+        self.cpu.mmu.sound_controller.set_run_2x(self.input.run_2x);
+        self.cpu.mmu.sound_controller.set_mute(self.input.mute);
         if self.input.quit {
             self.cpu.mmu.cartridge.save();
             std::process::exit(0);

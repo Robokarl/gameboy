@@ -8,6 +8,8 @@ pub struct Input {
     event_pump: EventPump,
     pub quit: bool,
     pub pause: bool,
+    pub mute: bool,
+    pub run_2x: bool,
 }
 
 impl Input {
@@ -16,6 +18,8 @@ impl Input {
             event_pump,
             quit: false,
             pause: false,
+            mute: false,
+            run_2x: false,
         }
     }
 
@@ -46,6 +50,14 @@ impl Input {
                 Event::KeyDown { keycode: Some(Keycode::P), .. } => {
                     self.pause = !self.pause;
                     if self.pause { println!("Paused") } else { println!("Unpaused") };
+                }
+                Event::KeyDown { keycode: Some(Keycode::LShift), .. } => {
+                    self.run_2x = !self.run_2x;
+                    if self.run_2x { println!("Running at double speed") } else { println!("Running at normal speed") };
+                }
+                Event::KeyDown { keycode: Some(Keycode::M), .. } => {
+                    self.mute = !self.mute;
+                    if self.mute { println!("Muted") } else { println!("Unmuted") };
                 }
                 Event::Window { win_event: WindowEvent::Close, .. }  => self.quit = true,
                 Event::Quit { .. } => self.quit = true,
