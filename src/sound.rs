@@ -26,6 +26,7 @@ struct ToneSweepChannel {
     counter_mode: bool,
     length_counter: u8,
     output: u8,
+    run_2x: bool,
 }
 
 impl ToneSweepChannel {
@@ -53,6 +54,7 @@ impl ToneSweepChannel {
             counter_mode: false,
             length_counter: 64,
             output: 0,
+            run_2x: false,
         }
     }
 
@@ -154,7 +156,8 @@ impl ToneSweepChannel {
             self.output = 0;
         } else {
             self.timer_tick += 1;
-            if self.timer_tick >= self.timer {
+            let timer_max = if self.run_2x { self.timer * 2 } else { self.timer };
+            if self.timer_tick >= timer_max {
                 self.timer_tick = 0;
                 self.waveform_index = (self.waveform_index + 1) % 8;
                 self.output = self.waveform[self.waveform_index] * self.volume;
@@ -245,6 +248,7 @@ struct WaveChannel {
     wave_ram: [u8; 32],
     wave_ram_index: usize,
     output: u8,
+    run_2x: bool,
 }
 
 impl WaveChannel {
@@ -261,6 +265,7 @@ impl WaveChannel {
             wave_ram: [0; 32],
             wave_ram_index: 0,
             output: 0,
+            run_2x: false,
         }
     }
 
@@ -341,7 +346,8 @@ impl WaveChannel {
             self.output = 0;
         } else {
             self.timer_tick += 1;
-            if self.timer_tick == self.timer {
+            let timer_max = if self.run_2x { self.timer * 2 } else { self.timer };
+            if self.timer_tick == timer_max {
                 self.timer_tick = 0;
                 self.wave_ram_index = (self.wave_ram_index + 1) % 32;
                 self.output = self.wave_ram[self.wave_ram_index] >> (self.output_level - 1);
@@ -767,6 +773,9 @@ impl SoundController {
 
     pub fn set_run_2x(&mut self, run_2x: bool) {
         self.run_2x = run_2x;
+        self.tone_sweep_channel.run_2x = run_2x;
+        self.tone_channel.run_2x = run_2x;
+        self.wave_channel.run_2x = run_2x;
     }
 
     pub fn set_mute(&mut self, mute: bool) {
