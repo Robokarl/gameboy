@@ -92,7 +92,11 @@ impl<'a> GameBoy<'a> {
 
         let double_speed = self.cpu.mmu.double_speed;
 
-        let update_rtc_cycle = if double_speed { 131072 } else { 65536 };
+        let mut update_rtc_cycle = if double_speed { 131072 } else { 65536 };
+        if self.input.run_2x {
+            update_rtc_cycle *= 2;
+        }
+
         if self.cycle_count % update_rtc_cycle == 0 {
             self.cpu.mmu.cartridge.update_rtc(15_625);
         }
